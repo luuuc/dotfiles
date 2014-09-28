@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+set -e
+
+dev="$HOME/Developer"
+dotfiles="$dev/dotfiles"
+
+info () {
+  printf "\r  \033[00;34m-> $1 \033[0m"
+  echo
+}
+
+warning () {
+  printf "\r  \033[0;33m[..] $1 \033[0m"
+  echo
+}
+
+success () {
+  echo
+  printf "\r\033[2K  \033[00;32m[OK] $1 \033[0m"
+  echo
+}
+
+fail () {
+  echo
+  printf "\r\033[2K  \033[0;31m[FAIL] $1 \033[0m"
+  echo
+}
+
+# Mac check
+if [[ `uname` != 'Darwin' ]]; then
+  fail 'luuuc/dotfiles needs a mac. Sorry.'
+  exit
+fi
+
+osversion=`sw_vers | grep -E "ProductVersion" | grep -o '[0-9]*\.[0-9]*' | head -1`
+if [[ $osversion < 10.9 ]]; then
+  fail 'luuuc/dotfiles needs at least Maverick or greater. Sorry.'
+  exit
+fi
+
+if [ -d "$dotfiles" ]; then
+  fail 'You already have luuuc/dotfiles installed.'
+  info "To reinstall run: rm -rf $dotfiles"
+  info "To bootstrap run: cd $dotfiles && ./bootstrap"
+  exit
+else
+  mkdir -p $dev
+  cd $dev
+fi
+
+info "Cloning luuuc/dotfiles to ~/Developer/dotfiles..."
+hash git >/dev/null 2>&1 && env git clone https://github.com/luuuc/dotfiles.git $ZSH || {
+  fail "You don't have Xcode Command Line Tools installed."
+  info "To install Xcode Command Line Tools run: xcode-select --install"
+  info "and rerun: curl -L https://raw.githubusercontent.com/luuuc/dotfiles/master/install | sh"
+  exit
+}
+
+success "luuuc/dotfiles installed !"
+info "To bootstrap this computer run:"
+info "cd ~/Developer/dotfiles && ./bootstrap"
+
+

@@ -1,0 +1,62 @@
+# Install native apps
+# Usage: `brew bundle Caskfile`
+
+# SETUP
+install caskroom/cask/brew-cask
+tap caskroom/versions
+tap caskroom/fonts
+
+# APPS
+cask install alfred 2> /dev/null
+cask install sublime-text3 2> /dev/null
+cask install apikitchen 2> /dev/null
+cask install clamxav 2> /dev/null
+cask install cleanmymac 2> /dev/null
+cask install google-chrome 2> /dev/null
+cask install mou 2> /dev/null
+cask install launchrocket 2> /dev/null
+cask install the-unarchiver 2> /dev/null
+cask install transmission 2> /dev/null
+cask install colorschemer-studio 2> /dev/null
+cask install firefox 2> /dev/null
+cask install little-snitch #2> /dev/null
+cask install onepassword 2> /dev/null
+cask install github 2> /dev/null
+cask install mailplane 2> /dev/null
+cask install opera 2> /dev/null
+cask install vlc 2> /dev/null
+cask install teamviewer 2> /dev/null
+cask install textmate 2> /dev/null
+cask install atom 2> /dev/null
+cask install virtualbox #2> /dev/null
+cask install java #2> /dev/null
+
+# cask install gitbox 2> /dev/null
+# cask install adium 2> /dev/null
+# cask install camino 2> /dev/null
+# cask install chromium 2> /dev/null
+# cask install mongohub 2> /dev/null
+# cask install sequel-pro 2> /dev/null
+# cask install codekit 2> /dev/null
+# cask install littleipsum 2> /dev/null
+# cask install gmail-notifier 2> /dev/null
+# cask install subl 2> /dev/null
+# cask install vagrant 2> /dev/null
+# cask install vagrant-manager 2> /dev/null
+# cask install viscosity 2> /dev/null
+# cask install vmware-fusion 2> /dev/null
+# cask install chefdk 2> /dev/null
+# cask install kaleidoscope 2> /dev/null
+# cask install moom 2> /dev/null
+# cask install pg-commander 2> /dev/null
+# cask install codebox 2> /dev/null
+# cask install mactracker 2> /dev/null
+# cask install navicat-for-postgresql 2> /dev/null
+
+# FONTS
+cask install font-inconsolata
+cask install font-source-code-pro
+cask install font-source-sans-pro
+
+# CLEANUP
+cask cleanup

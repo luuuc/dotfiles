@@ -1,0 +1,32 @@
+# Install command-line tools using Homebrew
+# Usage: `brew bundle Brewfile`
+
+# Make sure we’re using the latest Homebrew
+update
+
+# Upgrade any already-installed formulae
+upgrade
+
+install git
+install openssl
+install ssh-copy-id
+install wget --enable-iri
+install qt
+install ghostscript
+install imagemagick --with-webp
+install rbenv
+install rbenv-default-gems
+install rbenv-gem-rehash
+install ruby-build
+install node
+install nginx
+install memcached
+install redis
+install postgresql
+install sqlite
+
+#install mongodb
+#install elasticsearch
+
+# Remove outdated versions from the cellar
+cleanup

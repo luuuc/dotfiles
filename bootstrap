@@ -1,0 +1,356 @@
+#!/usr/bin/env bash
+
+dev="$HOME/Developer"
+dotfiles="$dev/dotfiles"
+
+info () {
+  printf "\r\033[2K  \033[00;32m[..]\033[0m $1"
+  echo
+}
+
+warning () {
+  printf "\r  \033[0;33m[..]\033[0m $1"
+  echo
+}
+
+success () {
+  echo
+  printf "\r\033[2K  \033[00;32m[OK] $1 \033[0m"
+  echo
+}
+
+fail () {
+  echo
+  printf "\r\033[2K  \033[0;31m[FAIL] $1 \033[0m"
+  echo
+}
+
+
+##
+# Terminal
+echo
+read -p "Setup zsh? " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  echo
+  read -p "Install oh-my-zsh? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info "Installing oh-my-zsh..."
+    rm -rf $HOME/.oh-my-zsh
+    curl -L http://install.ohmyz.sh | sh
+  fi
+
+  cp $dotfiles/zsh/zshrc $HOME/.zshrc
+  source $HOME/.zshrc
+fi
+
+##
+# Sudo
+# Ask for the administrator password upfront
+sudo -v
+# Keep-alive: update existing `sudo` time stamp until finished
+while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
+
+##
+# Symlink
+echo
+info 'Symlinking config files...'
+link() {
+  from="$1"
+  to="$2"
+  info "Linking '$from' to '$to'"
+  rm -f "$to"
+  ln -s "$from" "$to"
+}
+
+for location in $(find $dotfiles/symlink -name '.*'); do
+  file="${location##*/}"
+  file="${file%.sh}"
+  link "$dotfiles/$location" "$HOME/$file"
+done
+
+
+##
+# Homebrew
+echo
+read -p "Setup homebrew? " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  echo
+  which -s brew
+  if [[ $? != 0 ]]; then
+    echo
+    info "Installing homebrew..."
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" # > /tmp/homebrew-install.log
+  else
+    echo
+    info "Updating homebrew..."
+    brew update && brew upgrade
+  fi
+
+  echo
+  read -p "Install Brews? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info "Installing Brews..."
+    brew bundle "$dotfiles/brew/Brewfile"
+
+    mkdir -p ~/Library/LaunchAgents
+  fi
+
+  echo
+  read -p "Symlink Brews? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info "Symlinking Brews..."
+
+    # memcached
+    info 'Setting up memcached...'
+    ln -sfv /usr/local/opt/memcached/*.plist ~/Library/LaunchAgents
+
+    # redis
+    info 'Setting up redis...'
+    ln -sfv /usr/local/opt/redis/*.plist ~/Library/LaunchAgents
+
+    # postgresql
+    info 'Setting up postgresql...'
+    ln -sfv /usr/local/opt/postgresql/*.plist ~/Library/LaunchAgents
+  fi
+
+  echo
+  read -p "Install Casks? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info "Installing Casks..."
+    brew bundle "$dotfiles/brew/Caskfile"
+
+    # Link apps to Alfred
+    echo
+    read -p "Setup Alfred apps path? " -n 1 -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo
+      info 'Setting up alfred apps path...'
+      open ~/Applications/Alfred\ Preferences.app
+      sleep 3
+      brew cask alfred link
+    fi
+  fi
+fi
+
+
+##
+# Sublime
+echo
+read -p "Setup sublime text 3? " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  echo
+  info 'Setting up sublime text 3...'
+  open ~/Applications/Sublime\ Text.app
+  sleep 3
+
+  mkdir -p "$HOME/Library/Application Support/Sublime Text 3"
+  mkdir -p "$HOME/Library/Application Support/Sublime Text 3/Packages"
+  mkdir -p "$HOME/Library/Application Support/Sublime Text 3/Packages/User"
+  mkdir -p "$HOME/Library/Application Support/Sublime Text 3/Installed Packages"
+
+  #source_pkg="$HOME/Developer/dotfiles/sublime"
+  #user_pkg="$HOME/Library/Application\ Support/Sublime\ Text\ 3/Packages/User"
+  #installed_pkg="$HOME/Library/Application\ Support/Sublime\ Text\ 3/Installed\ Packages"
+
+  info 'Setting packages...'
+  cp -r $HOME/Developer/dotfiles/sublime/packages/ $HOME/Library/Application\ Support/Sublime\ Text\ 3/Installed\ Packages
+
+  info 'Setting user preferences...'
+  cp -r $HOME/Developer/dotfiles/sublime/settings/ $HOME/Library/Application\ Support/Sublime\ Text\ 3/Packages/User
+fi
+
+
+##
+# Ruby
+echo
+read -p "Setup Ruby? " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  echo
+  info "Installing Rbenv default gems"
+  mkdir -p $HOME/.rbenv
+  rm $HOME/.rbenv/default-gems
+  cp $HOME/Developer/dotfiles/ruby/default-gems $HOME/.rbenv/default-gems
+  #ln -s $HOME/Developer/dotfiles/ruby/default-gems $HOME/.rbenv/default-gems
+
+  echo
+  read -p "Install Ruby 1.9.3-p547? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info "Installing Ruby 1.9.3-p547"
+    rbenv install 1.9.3-p547
+  fi
+
+  echo
+  read -p "Install Ruby 2.1.3? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info "Installing Ruby 2.1.3"
+    rbenv install 2.1.3
+
+    info "Setting default ruby to 2.1.3"
+    rbenv global 2.1.3
+  fi
+fi
+
+
+##
+# Nodejs
+echo
+read -p "Install Nodejs packages? " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  echo
+  info 'Installing Nodejs packages...'
+  npm install -g grunt-cli
+fi
+
+
+##
+# OSX
+echo
+read -p "Setup OS X? " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  echo
+  info 'Setting up OS X...'
+  # Hostname
+  echo
+  read -p "Set host & computer name? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info 'Enter new hostname of the machine (e.g. luuuc-macbook-13)'
+    read hostname
+    info "Setting new hostname to $hostname..."
+    scutil --set HostName "$hostname"
+    compname=$(sudo scutil --get HostName | tr '-' '.')
+    info "Setting computer name to $compname"
+    scutil --set ComputerName "$compname"
+    sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$compname"
+  fi
+
+  # Copy wallpapers
+  echo
+  read -p "Copy wallpapers? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info "Copying wallpapers to $HOME/Pictures/Wallpapers..."
+    cp -r $dotfiles/osx/wallpapers $HOME/Pictures/Wallpapers
+  fi
+
+
+  # Install fonts
+  echo
+  read -p "Install fonts? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info 'Copying fonts...'
+    find $dotfiles/osx/fonts/ -name "*.ttf" -exec cp -iv {} /Library/Fonts \;
+  fi
+
+
+  # Set system preferences
+  echo
+  read -p "Tweak OS X? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info 'Tweaking OS X...'
+    source "$dotfiles/osx/settings.sh"
+  fi
+
+  # SSH keys
+  echo
+  read -p "Generate SSH certificates? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+
+    ssh="$HOME/.ssh"
+    mkdir -p $ssh
+    cd $ssh
+    eval
+     "$(ssh-agent -s)"
+
+    pub=$HOME/.ssh/id_rsa.pub
+    info 'Checking for id_rsa SSH key, generating one if it does not exist...'
+    [[ -f $pub ]] || ssh-keygen -t rsa -f $ssh/id_rsa # -C 'your_email@example.com' -P 'blahblah'
+    ssh-add ~/.ssh/id_rsa
+
+    pub=$HOME/.ssh/id_rsa_github.pub
+    info 'Checking for id_rsa_github SSH key, generating one if it does not exist...'
+    [[ -f $pub ]] || ssh-keygen -t rsa -f $ssh/id_rsa_github # -C 'your_email@example.com' -P 'blahblah'
+    ssh-add ~/.ssh/id_rsa_github
+
+    pub=$HOME/.ssh/id_rsa_gitlab.pub
+    info 'Checking for id_rsa_gitlab SSH key, generating one if it does not exist...'
+    [[ -f $pub ]] || ssh-keygen -t rsa -f $ssh/id_rsa_gitlab # -C 'your_email@example.com' -P 'blahblah'
+    ssh-add ~/.ssh/id_rsa_gitlab
+
+    info "Copy multiple git account config to $HOME/.ssh/config..."
+    cp $dotfiles/osx/ssh_config $HOME/.ssh/config
+
+    info 'Setting correct .ssh folder permissions...'
+    chmod 700 $HOME/.ssh
+    chmod 600 $HOME/.ssh/*
+  fi
+fi
+
+
+##
+# Web development servers
+echo
+read -p "Setup web dev servers (Pow, Nginx HTTPS & SSL)? " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  echo
+  # Pow
+  echo
+  read -p "Install Pow? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info "Installing Pow..."
+    curl get.pow.cx | sh
+  fi
+
+  # Nginx
+  echo
+  read -p "Setup up nginx? " -n 1 -r
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo
+    info 'Setting up nginx...'
+    sudo cp /usr/local/opt/nginx/homebrew.mxcl.nginx.plist /Library/LaunchAgents/homebrew.mxcl.nginx.plist
+    sudo chown root /Library/LaunchAgents/homebrew.mxcl.nginx.plist
+
+    info "Enabling ports 80 & 443"
+    rm /usr/local/etc/nginx/nginx.conf
+    cp $HOME/Developer/dotfiles/brew/nginx.conf /usr/local/etc/nginx/nginx.conf
+    #ln -sfv $HOME/Developer/dotfiles/brew/nginx.conf /usr/local/etc/nginx/nginx.conf
+
+    info "Generating *.dev certificate"
+    cd /tmp
+    openssl genrsa -out dev.key 1024
+    openssl req -new -key dev.key -out dev.csr -subj '/C=FR/ST=Ile de France/L=Paris/O=FamiCity/OU=IT/CN=*.dev'
+    cp dev.key dev.key.bak
+    openssl rsa -in dev.key.bak -out dev.key
+    openssl x509 -req -days 3650 -in dev.csr -signkey dev.key -out dev.crt
+    mkdir -p /usr/local/etc/nginx/certificates
+    mv dev.* /usr/local/etc/nginx/certificates
+  fi
+fi
+
+
+##
+# Finished
+echo
+success "$hostname bootstrapped!"
+
+
+##
+# Restart
+echo
+read -p "Restart? (recommended) " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  echo
+  info 'Restarting Mac...'
+  sudo reboot
+fi
